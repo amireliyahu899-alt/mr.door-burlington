@@ -13,9 +13,3 @@ export interface Neighborhood {
   postalCodePrefix?: string;
   description: string;
 }
-
-export type ViewState = {
-  page: 'home' | 'service' | 'neighborhood' | 'contact' | 'service-neighborhood';
-  serviceId?: string;
-  neighborhoodId?: string;
-};

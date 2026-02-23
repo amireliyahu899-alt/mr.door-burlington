@@ -1,13 +1,35 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
+  Routes, Route, Link, useNavigate, useParams, useLocation 
+} from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
+import { 
   Phone, Mail, MapPin, Menu, X, ChevronRight, 
   CheckCircle2, Clock, Shield, Star, Hammer, Loader2, Search, Info
 } from 'lucide-react';
 import { NEIGHBORHOODS, SERVICES, getIconComponent } from './constants';
-import { ViewState, Service, Neighborhood } from './types';
+import { Service, Neighborhood } from './types';
 
 const FORMSPREE_ID = "meellkeq"; 
+
+const SEO: React.FC<{ 
+  title: string; 
+  description: string; 
+  canonical?: string;
+  schema?: any;
+}> = ({ title, description, canonical, schema }) => (
+  <Helmet>
+    <title>{title} | Mr. Door Burlington</title>
+    <meta name="description" content={description} />
+    {canonical && <link rel="canonical" href={canonical} />}
+    {schema && (
+      <script type="application/ld+json">
+        {JSON.stringify(schema)}
+      </script>
+    )}
+  </Helmet>
+);
 
 const LeadForm: React.FC<{ initialService?: string }> = ({ initialService = "" }) => {
   const [status, setStatus] = useState<'IDLE' | 'SUBMITTING' | 'SUCCESS' | 'ERROR'>('IDLE');
@@ -53,28 +75,37 @@ const LeadForm: React.FC<{ initialService?: string }> = ({ initialService = "" }
   );
 };
 
-const Header: React.FC<{ onNavigate: (view: ViewState) => void }> = ({ onNavigate }) => {
+const Header: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+  
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass-effect border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-4 h-20 flex justify-between items-center">
-        <div className="flex items-center cursor-pointer" onClick={() => onNavigate({ page: 'home' })}>
+        <Link to="/" className="flex items-center">
           <div className="bg-blue-600 p-2 rounded-lg mr-3 shadow-lg shadow-blue-200"><Hammer className="w-6 h-6 text-white" /></div>
           <div>
             <span className="text-xl font-black text-slate-900 tracking-tighter">MR. DOOR</span>
             <span className="block text-[10px] font-bold text-blue-600 uppercase tracking-[0.2em] leading-none">Burlington</span>
           </div>
-        </div>
+        </Link>
         <nav className="hidden md:flex space-x-8 items-center">
-          <button onClick={() => onNavigate({ page: 'home' })} className="font-semibold text-slate-600 hover:text-blue-600 transition-colors">Home</button>
-          <button onClick={() => { document.getElementById('services')?.scrollIntoView(); }} className="font-semibold text-slate-600 hover:text-blue-600 transition-colors">Services</button>
+          <Link to="/" className="font-semibold text-slate-600 hover:text-blue-600 transition-colors">Home</Link>
+          <button onClick={() => { 
+            if (window.location.pathname !== '/') {
+              navigate('/');
+              setTimeout(() => document.getElementById('services')?.scrollIntoView(), 100);
+            } else {
+              document.getElementById('services')?.scrollIntoView(); 
+            }
+          }} className="font-semibold text-slate-600 hover:text-blue-600 transition-colors">Services</button>
           <a href="tel:6476990540" className="bg-slate-900 text-white px-6 py-2.5 rounded-full font-bold hover:bg-slate-800 flex items-center transition-all"><Phone className="w-4 h-4 mr-2" /> (647) 699-0540</a>
         </nav>
         <button className="md:hidden p-2 text-slate-600" onClick={() => setIsOpen(!isOpen)}>{isOpen ? <X /> : <Menu />}</button>
       </div>
       {isOpen && (
         <div className="md:hidden bg-white border-b border-slate-200 p-6 space-y-4 animate-in slide-in-from-top duration-300">
-          <button onClick={() => { onNavigate({ page: 'home' }); setIsOpen(false); }} className="block w-full text-left font-bold text-lg p-2 border-b">Home</button>
+          <Link to="/" onClick={() => setIsOpen(false)} className="block w-full text-left font-bold text-lg p-2 border-b">Home</Link>
           <a href="tel:6476990540" className="block w-full bg-blue-600 text-white p-4 rounded-xl font-bold text-center shadow-lg">Call Now: (647) 699-0540</a>
         </div>
       )}
@@ -82,7 +113,7 @@ const Header: React.FC<{ onNavigate: (view: ViewState) => void }> = ({ onNavigat
   );
 };
 
-const ServiceSection: React.FC<{ onNavigate: (view: ViewState) => void }> = ({ onNavigate }) => {
+const ServiceSection: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const filteredServices = useMemo(() => 
     SERVICES.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase())).slice(0, 24), 
@@ -108,10 +139,10 @@ const ServiceSection: React.FC<{ onNavigate: (view: ViewState) => void }> = ({ o
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {filteredServices.map(service => (
-            <div 
+            <Link 
               key={service.id} 
-              onClick={() => onNavigate({ page: 'service', serviceId: service.id })} 
-              className="group bg-white p-8 rounded-3xl border border-slate-100 card-hover cursor-pointer"
+              to={`/service/${service.id}`}
+              className="group bg-white p-8 rounded-3xl border border-slate-100 card-hover cursor-pointer block"
             >
               <div className="bg-blue-50 w-14 h-14 rounded-2xl flex items-center justify-center text-blue-600 mb-6 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
                 {getIconComponent(service.name)}
@@ -121,7 +152,7 @@ const ServiceSection: React.FC<{ onNavigate: (view: ViewState) => void }> = ({ o
               <div className="mt-6 pt-6 border-t border-slate-50 flex items-center text-blue-600 font-bold text-sm">
                 View Details <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
@@ -129,7 +160,7 @@ const ServiceSection: React.FC<{ onNavigate: (view: ViewState) => void }> = ({ o
   );
 };
 
-const NeighborhoodSection: React.FC<{ onNavigate: (view: ViewState) => void }> = ({ onNavigate }) => (
+const NeighborhoodSection: React.FC = () => (
   <section className="py-24 bg-slate-900 text-white overflow-hidden relative" id="neighborhoods">
     <div className="absolute top-0 right-0 w-1/3 h-full bg-blue-600/10 skew-x-12 translate-x-1/2"></div>
     <div className="max-w-7xl mx-auto px-4 relative z-10">
@@ -139,9 +170,9 @@ const NeighborhoodSection: React.FC<{ onNavigate: (view: ViewState) => void }> =
           <p className="text-xl text-slate-400 mb-12">Local technicians are already in your area. We guarantee fast response times for emergency repairs across Burlington.</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {NEIGHBORHOODS.map(n => (
-              <button 
+              <Link 
                 key={n.id} 
-                onClick={() => onNavigate({ page: 'neighborhood', neighborhoodId: n.id })} 
+                to={`/neighborhood/${n.id}`}
                 className="flex items-center p-5 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl hover:bg-white/10 hover:border-blue-500/50 transition-all text-left group"
               >
                 <MapPin className="w-6 h-6 text-blue-500 mr-4 group-hover:scale-110 transition-transform" /> 
@@ -149,7 +180,7 @@ const NeighborhoodSection: React.FC<{ onNavigate: (view: ViewState) => void }> =
                   <span className="font-bold block text-white">{n.name}</span>
                   <span className="text-xs text-slate-500 font-medium tracking-wide uppercase">Burlington District</span>
                 </div>
-              </button>
+              </Link>
             ))}
           </div>
         </div>
@@ -170,8 +201,41 @@ const NeighborhoodSection: React.FC<{ onNavigate: (view: ViewState) => void }> =
   </section>
 );
 
-const HomeView: React.FC<{ onNavigate: (view: ViewState) => void }> = ({ onNavigate }) => (
+const HomeView: React.FC = () => (
   <div className="animate-in fade-in duration-700">
+    <SEO 
+      title="Home" 
+      description="Professional door repair, installation and replacement in Burlington, Ontario. 24/7 emergency service for all neighborhoods including Millcroft, Orchard, and Aldershot."
+      schema={{
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "name": "Mr. Door Burlington",
+        "image": "https://images.unsplash.com/photo-1512917774080-9991f1c4c750",
+        "@id": "",
+        "url": window.location.origin,
+        "telephone": "6476990540",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Serving All Burlington",
+          "addressLocality": "Burlington",
+          "addressRegion": "ON",
+          "addressCountry": "CA"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": 43.3255,
+          "longitude": -79.7990
+        },
+        "openingHoursSpecification": {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": [
+            "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+          ],
+          "opens": "00:00",
+          "closes": "23:59"
+        }
+      }}
+    />
     <section className="relative min-h-[90vh] flex items-center pt-20">
       <div className="absolute inset-0 z-0">
         <img 
@@ -194,12 +258,12 @@ const HomeView: React.FC<{ onNavigate: (view: ViewState) => void }> = ({ onNavig
             Reliable repair, installation, and replacement for residential and commercial doors. Serving all Burlington neighborhoods 24/7.
           </p>
           <div className="flex flex-col sm:flex-row gap-5">
-            <button 
-              onClick={() => onNavigate({ page: 'contact' })} 
+            <Link 
+              to="/contact" 
               className="bg-blue-600 px-10 py-5 rounded-2xl font-black text-lg hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/30 flex items-center justify-center"
             >
               Get a Free Quote
-            </button>
+            </Link>
             <a 
               href="tel:6476990540" 
               className="bg-white/10 backdrop-blur-md border-2 border-white/20 px-10 py-5 rounded-2xl font-black text-lg flex items-center justify-center hover:bg-white/20 transition-all"
@@ -228,27 +292,44 @@ const HomeView: React.FC<{ onNavigate: (view: ViewState) => void }> = ({ onNavig
       </div>
     </section>
 
-    <ServiceSection onNavigate={onNavigate} />
-    <NeighborhoodSection onNavigate={onNavigate} />
+    <ServiceSection />
+    <NeighborhoodSection />
   </div>
 );
 
 const ServiceDetail: React.FC<{ 
   service: Service; 
   neighborhood?: Neighborhood; 
-  onNavigate: (view: ViewState) => void 
-}> = ({ service, neighborhood, onNavigate }) => (
+}> = ({ service, neighborhood }) => (
   <div className="pt-20 animate-in fade-in slide-in-from-bottom-8 duration-700">
+    <SEO 
+      title={`${service.name} ${neighborhood ? `in ${neighborhood.name}` : 'Burlington'}`}
+      description={`Professional ${service.name.toLowerCase()} in ${neighborhood ? neighborhood.name : 'Burlington, Ontario'}. 24/7 emergency service, certified technicians, and upfront pricing.`}
+      schema={{
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": `${service.name} ${neighborhood ? `in ${neighborhood.name}` : 'Burlington'}`,
+        "description": service.description,
+        "provider": {
+          "@type": "LocalBusiness",
+          "name": "Mr. Door Burlington"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": neighborhood ? neighborhood.name : "Burlington"
+        }
+      }}
+    />
     {/* Page Banner */}
     <div className="bg-slate-900 text-white py-32 px-4 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-1/2 h-full bg-blue-600/5 -skew-x-12 translate-x-1/4"></div>
       <div className="max-w-7xl mx-auto relative z-10">
-        <button 
-          onClick={() => onNavigate({ page: 'home' })}
+        <Link 
+          to="/"
           className="text-blue-500 font-bold mb-8 flex items-center hover:text-blue-400 transition-colors"
         >
           <ChevronRight className="w-5 h-5 rotate-180 mr-2" /> Home
-        </button>
+        </Link>
         <h1 className="text-5xl md:text-7xl font-black mb-8 leading-tight tracking-tight max-w-5xl">
           {service.name} <br />
           {neighborhood ? <span className="text-blue-500">in {neighborhood.name}</span> : <span className="text-blue-500 italic">Burlington, ON</span>}
@@ -318,22 +399,22 @@ const ServiceDetail: React.FC<{
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {neighborhood 
                 ? SERVICES.slice(0, 12).map(s => (
-                  <button 
+                  <Link 
                     key={s.id} 
-                    onClick={() => onNavigate({ page: 'service-neighborhood', serviceId: s.id, neighborhoodId: neighborhood.id })}
+                    to={`/service/${s.id}/neighborhood/${neighborhood.id}`}
                     className="p-4 bg-white border border-slate-100 rounded-xl text-sm font-bold text-slate-600 hover:border-blue-500 hover:text-blue-600 transition-all text-left flex items-center"
                   >
                     <ChevronRight className="w-3 h-3 mr-2 text-blue-500" /> {s.name}
-                  </button>
+                  </Link>
                 ))
                 : NEIGHBORHOODS.map(n => (
-                  <button 
+                  <Link 
                     key={n.id} 
-                    onClick={() => onNavigate({ page: 'service-neighborhood', serviceId: service.id, neighborhoodId: n.id })}
+                    to={`/service/${service.id}/neighborhood/${n.id}`}
                     className="p-4 bg-white border border-slate-100 rounded-xl text-sm font-bold text-slate-600 hover:border-blue-500 hover:text-blue-600 transition-all text-left flex items-center"
                   >
                     <MapPin className="w-3 h-3 mr-2 text-blue-500" /> {service.name} {n.name}
-                  </button>
+                  </Link>
                 ))
               }
             </div>
@@ -353,38 +434,61 @@ const ServiceDetail: React.FC<{
   </div>
 );
 
+const ServicePage: React.FC = () => {
+  const { serviceId } = useParams();
+  const service = SERVICES.find(s => s.id === serviceId);
+  if (!service) return <div className="pt-40 text-center">Service not found</div>;
+  return <ServiceDetail service={service} />;
+};
+
+const NeighborhoodPage: React.FC = () => {
+  const { neighborhoodId } = useParams();
+  const neighborhood = NEIGHBORHOODS.find(n => n.id === neighborhoodId);
+  if (!neighborhood) return <div className="pt-40 text-center">Neighborhood not found</div>;
+  // Default service for neighborhood page
+  return <ServiceDetail service={SERVICES[23]} neighborhood={neighborhood} />;
+};
+
+const ServiceNeighborhoodPage: React.FC = () => {
+  const { serviceId, neighborhoodId } = useParams();
+  const service = SERVICES.find(s => s.id === serviceId);
+  const neighborhood = NEIGHBORHOODS.find(n => n.id === neighborhoodId);
+  if (!service || !neighborhood) return <div className="pt-40 text-center">Page not found</div>;
+  return <ServiceDetail service={service} neighborhood={neighborhood} />;
+};
+
 const App: React.FC = () => {
-  const [view, setView] = useState<ViewState>({ page: 'home' });
+  const { pathname } = useLocation();
   
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [view]);
-
-  const currentService = view.serviceId ? SERVICES.find(s => s.id === view.serviceId) : undefined;
-  const currentNeighborhood = view.neighborhoodId ? NEIGHBORHOODS.find(n => n.id === view.neighborhoodId) : undefined;
+  }, [pathname]);
 
   return (
     <div className="min-h-screen flex flex-col selection:bg-blue-600 selection:text-white">
-      <Header onNavigate={setView} />
+      <Header />
       
       <main className="flex-grow">
-        {view.page === 'home' && <HomeView onNavigate={setView} />}
-        {view.page === 'service' && currentService && <ServiceDetail service={currentService} onNavigate={setView} />}
-        {view.page === 'neighborhood' && currentNeighborhood && <ServiceDetail service={SERVICES[23]} neighborhood={currentNeighborhood} onNavigate={setView} />}
-        {view.page === 'service-neighborhood' && currentService && currentNeighborhood && <ServiceDetail service={currentService} neighborhood={currentNeighborhood} onNavigate={setView} />}
-        {view.page === 'contact' && (
-          <div className="py-40 bg-slate-50">
-            <div className="max-w-xl mx-auto px-4">
-              <div className="text-center mb-12">
-                <h2 className="text-5xl font-black text-slate-900 mb-4 tracking-tighter uppercase">Get In Touch</h2>
-                <p className="text-slate-600 text-lg">We serve residential and commercial properties.</p>
-              </div>
-              <div className="bg-white p-12 rounded-[3rem] shadow-2xl border border-slate-100">
-                <LeadForm />
+        <Routes>
+          <Route path="/" element={<HomeView />} />
+          <Route path="/service/:serviceId" element={<ServicePage />} />
+          <Route path="/neighborhood/:neighborhoodId" element={<NeighborhoodPage />} />
+          <Route path="/service/:serviceId/neighborhood/:neighborhoodId" element={<ServiceNeighborhoodPage />} />
+          <Route path="/contact" element={
+            <div className="py-40 bg-slate-50">
+              <SEO title="Contact Us" description="Get a free estimate for door repair and installation in Burlington. Contact Mr. Door Burlington today." />
+              <div className="max-w-xl mx-auto px-4">
+                <div className="text-center mb-12">
+                  <h2 className="text-5xl font-black text-slate-900 mb-4 tracking-tighter uppercase">Get In Touch</h2>
+                  <p className="text-slate-600 text-lg">We serve residential and commercial properties.</p>
+                </div>
+                <div className="bg-white p-12 rounded-[3rem] shadow-2xl border border-slate-100">
+                  <LeadForm />
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          } />
+        </Routes>
       </main>
 
       {/* Sticky Mobile Call Footer */}
@@ -411,9 +515,9 @@ const App: React.FC = () => {
               <h4 className="text-white font-bold mb-8 uppercase tracking-[0.2em] text-[10px]">Neighborhoods</h4>
               <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs font-bold">
                 {NEIGHBORHOODS.map(n => (
-                  <button key={n.id} onClick={() => setView({ page: 'neighborhood', neighborhoodId: n.id })} className="hover:text-blue-500 transition-colors text-left flex items-center">
+                  <Link key={n.id} to={`/neighborhood/${n.id}`} className="hover:text-blue-500 transition-colors text-left flex items-center">
                     <MapPin className="w-3 h-3 mr-2 opacity-50" /> {n.name}
-                  </button>
+                  </Link>
                 ))}
               </div>
             </div>
